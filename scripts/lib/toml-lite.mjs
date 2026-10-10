@@ -3,6 +3,9 @@
  * tables, arrays of tables, dotted keys, basic/literal (and multi-line) strings, numbers, booleans,
  * dates (kept as strings), arrays and inline tables. Dependency-free so `kit-check.mjs` runs before
  * `pnpm install` (and so Launch can port it). Throws `TomlError` with a line number.
+ *
+ * SHARED with the Rocketflare kit (rocketflare-dev/rocketflare `scripts/lib/toml-lite.mjs`): change
+ * both copies together.
  */
 
 export class TomlError extends Error {}

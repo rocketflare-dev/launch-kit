@@ -3,6 +3,8 @@
  * (`@launch/shared/kit-manifest` in Launch). Required fields, types, patterns and literals match;
  * unknown fields are allowed (readers tolerate them); defaults are applied so callers see the
  * same values Launch would. When Launch's schema changes, change this file in the same release.
+ * The Rocketflare kit (rocketflare-dev/rocketflare `scripts/lib/kit-manifest.mjs`) ships the same
+ * file: change both together.
  *
  * `validateManifest(value)` → `{ manifest, problems }`, `problems` one line each (`path: why`).
  */
@@ -25,6 +27,7 @@ const KIT_ID = /^[a-z][a-z0-9-]{1,38}[a-z0-9]$/
 const ENV_NAME = /^[A-Z][A-Z0-9_]*$/
 const WORKFLOW_FILE = /^[\w.-]+\.ya?ml$/
 const EXTENSION = /^[a-z_][a-z0-9_]*$/
+const TITLE_SUFFIX = /^[a-z0-9][a-z0-9-]*$/
 
 export function validateManifest(input) {
   const problems = []
@@ -92,6 +95,7 @@ export function validateManifest(input) {
     field(kit, 'name', 'kit', str(1, 80, { trim: true }))
     field(kit, 'description', 'kit', str(0, 300, { trim: true }), { optional: true })
     field(kit, 'icon', 'kit', str(0, 300, { trim: true }), { optional: true })
+    field(kit, 'repo', 'kit', str(1, 300, { trim: true }), { optional: true })
     const version = block(kit, 'version', 'kit', {
       def: { file: 'package.json', field: 'version' },
     })
@@ -139,6 +143,21 @@ export function validateManifest(input) {
       })
       field(naming, 'stagingSuffix', 'worker.naming', str(1, 30), { def: '-staging' })
     }
+    field(
+      worker,
+      'titles',
+      'worker',
+      v => {
+        if (!isObj(v)) return 'must be an object'
+        for (const [k, val] of Object.entries(v)) {
+          if (k.length < 1 || k.length > 100) return `key ${k} must be 1-100 characters`
+          if (typeof val !== 'string' || !TITLE_SUFFIX.test(val))
+            return `${k} must be lowercase letters, digits and dashes`
+        }
+        return null
+      },
+      { optional: true }
+    )
   }
 
   const provides = block(m, 'launchProvides', '')
@@ -155,7 +174,8 @@ export function validateManifest(input) {
     if (oidc) {
       for (const key of ['issuer', 'clientId', 'clientSecret'])
         field(oidc, key, 'launchProvides.oidc', envName)
-      field(oidc, 'only', 'launchProvides.oidc', envName, { optional: true })
+      for (const key of ['only', 'label'])
+        field(oidc, key, 'launchProvides.oidc', envName, { optional: true })
     }
     field(provides, 'bootstrapAdmins', 'launchProvides', envName, { optional: true })
     field(provides, 'emailApiKey', 'launchProvides', envName, { optional: true })

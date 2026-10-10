@@ -1,3 +1,7 @@
+/**
+ * launch.kit.json's shape. The Rocketflare kit ports these cases to vitest
+ * (rocketflare-dev/rocketflare `apps/web/tests/config/launch-kit-manifest.test.ts`): keep both in step.
+ */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -30,6 +34,16 @@ describe('launch.kit.json (the shape Launch parses)', () => {
     assert.deepEqual(manifest.declaredConfig, { optional: [] })
   })
 
+  it('accepts the optional kit.repo, worker.titles and launchProvides.oidc.label', () => {
+    const m = own()
+    m.kit.repo = 'https://github.com/acme/kit.git'
+    m.worker.titles = { RATE_LIMIT_KV: 'rate-limit' }
+    m.launchProvides.oidc.label = 'OIDC_LABEL'
+    const { problems, manifest } = validateManifest(m)
+    assert.deepEqual(problems, [])
+    assert.deepEqual(manifest.worker.titles, { RATE_LIMIT_KV: 'rate-limit' })
+  })
+
   it('tolerates unknown fields', () => {
     const m = own()
     m.future = { anything: true }
@@ -51,6 +65,27 @@ describe('launch.kit.json (the shape Launch parses)', () => {
         m.kit.id = 'Bad_Id'
       },
       'kit.id',
+    ],
+    [
+      'an empty kit repo',
+      m => {
+        m.kit.repo = ' '
+      },
+      'kit.repo',
+    ],
+    [
+      'an uppercase KV title',
+      m => {
+        m.worker.titles = { KV: 'Rate' }
+      },
+      'worker.titles',
+    ],
+    [
+      'an OIDC label that is not an env name',
+      m => {
+        m.launchProvides.oidc.label = 'Sign in'
+      },
+      'launchProvides.oidc.label',
     ],
     [
       'a missing appManifest',

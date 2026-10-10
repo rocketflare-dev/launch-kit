@@ -25,6 +25,10 @@
  *
  * The slug the names are checked against is the copy's (`app.slug` in the app manifest) or, in
  * the kit itself, `scaffold.tokens.slug` (else `kit.id`). Exit 0 conformant, 1 not, 2 usage. Node built-ins only.
+ *
+ * SHARED with the Rocketflare kit (rocketflare-dev/rocketflare `scripts/kit-check.mjs`, with
+ * `scripts/lib/{kit-manifest,toml-lite,yaml-lite}.mjs`): one checker, the same rules Launch
+ * applies. Both copies must change together — a fix in one is a fix in the other, same release.
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
@@ -385,12 +389,15 @@ export function checkKit(dir, { provisioned = false, exec = false } = {}) {
       : manifest.kit.id
   let isCopy = false
   if (exists(manifest.scaffold.appManifest)) {
-    isCopy = true
     try {
       const app = JSON.parse(read(manifest.scaffold.appManifest))
-      for (const k of ['slug', 'display', 'domain'])
-        if (typeof app.app?.[k] !== 'string')
-          files.push(`${manifest.scaffold.appManifest}: app.${k} missing`)
+      // A kit may keep its provenance file in the kit itself with `"app": null` (Rocketflare's
+      // `.rocketflare.json`): that is the kit, not a copy, so only the `kit` block is checked.
+      isCopy = app.app !== null
+      if (isCopy)
+        for (const k of ['slug', 'display', 'domain'])
+          if (typeof app.app?.[k] !== 'string')
+            files.push(`${manifest.scaffold.appManifest}: app.${k} missing`)
       for (const k of ['id', 'version'])
         if (typeof app.kit?.[k] !== 'string')
           files.push(`${manifest.scaffold.appManifest}: kit.${k} missing`)

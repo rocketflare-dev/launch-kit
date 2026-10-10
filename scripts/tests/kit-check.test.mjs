@@ -1,3 +1,7 @@
+/**
+ * scripts/kit-check.mjs. The Rocketflare kit ports these cases to vitest
+ * (rocketflare-dev/rocketflare `apps/web/tests/config/kit-check.test.ts`): keep both in step.
+ */
 import assert from 'node:assert/strict'
 import { readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -82,6 +86,35 @@ describe('kit-check finds what breaks the contract', () => {
     const problems = failing(checkKit(dir)).join('\n')
     assert.match(problems, /scaffold.init: scripts\/init.mjs does not exist/)
     assert.match(problems, /CLAUDE.md or AGENTS.md/)
+  })
+
+  it('an app manifest with "app": null is the kit itself, not a copy', () => {
+    const dir = fresh()
+    const m = JSON.parse(readFileSync(path.join(dir, 'launch.kit.json'), 'utf8'))
+    writeFileSync(
+      path.join(dir, m.scaffold.appManifest),
+      JSON.stringify({ app: null, kit: { id: m.kit.id, version: '0.0.0', commit: null } })
+    )
+    const report = checkKit(dir)
+    assert.deepEqual(failing(report), [])
+    assert.equal(report.kit.isCopy, false)
+    assert.equal(report.kit.slug, m.scaffold.tokens.slug)
+  })
+
+  it('a copy whose app manifest lacks the kit id Launch reads', () => {
+    const dir = fresh()
+    const m = JSON.parse(readFileSync(path.join(dir, 'launch.kit.json'), 'utf8'))
+    const app = m.scaffold.appManifest
+    writeFileSync(
+      path.join(dir, app),
+      JSON.stringify({
+        app: { slug: m.scaffold.tokens.slug, display: 'X', domain: 'x.test' },
+        kit: { version: '0.0.0', commit: null },
+      })
+    )
+    const report = checkKit(dir)
+    assert.equal(report.kit.isCopy, true)
+    assert.ok(failing(report).includes(`${app}: kit.id missing`), failing(report).join('\n'))
   })
 
   it('a renamed Gate job', () => {

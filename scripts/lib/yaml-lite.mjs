@@ -5,6 +5,9 @@
  * comments. Anchors, tags and multi-document streams are not supported (workflows do not use
  * them). Scalars stay strings — `on`, `true` and `5` included — which is what a structural check
  * wants. Dependency-free so `kit-check.mjs` runs before `pnpm install`. Throws `YamlError`.
+ *
+ * SHARED with the Rocketflare kit (rocketflare-dev/rocketflare `scripts/lib/yaml-lite.mjs`): change
+ * both copies together.
  */
 
 export class YamlError extends Error {}
