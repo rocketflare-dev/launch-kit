@@ -1,0 +1,34 @@
+{
+  "name": "launch-kit",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Launch Kit: the smallest app that passes the Launch kit contract (Hono on Cloudflare Workers, Neon Postgres, OIDC sign-in).",
+  "type": "module",
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "init": "node scripts/init.mjs",
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "dev": "node scripts/dev.mjs start",
+    "dev:stop": "node scripts/dev.mjs stop",
+    "dev:db:up": "node scripts/bootstrap.mjs --db-only",
+    "gate": "node scripts/gate.mjs",
+    "lint": "biome check . --diagnostic-level=error",
+    "lint:fix": "biome check --write .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "node scripts/test.mjs",
+    "build": "pnpm -r build",
+    "db:generate": "pnpm --filter ./apps/web db:generate",
+    "db:migrate": "pnpm --filter ./apps/web db:migrate",
+    "db:migrate:ci": "pnpm --filter ./apps/web db:migrate:ci",
+    "kit:check": "node scripts/kit-check.mjs",
+    "kit:upgrade": "node scripts/upgrade.mjs",
+    "web": "pnpm --filter ./apps/web"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.11"
+  }
+}

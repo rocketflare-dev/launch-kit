@@ -1,0 +1,37 @@
+{
+  "name": "@launch-kit/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The app: a Hono Worker serving the API and the static UI",
+  "type": "module",
+  "scripts": {
+    "dev:api": "mkdir -p dist/ui && wrangler dev --ip 0.0.0.0 --port ${DEV_API_PORT:-3001} --show-interactive-dev-session=false",
+    "dev:ui": "vite",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/ui",
+    "build": "vite build && wrangler deploy --dry-run --outdir dist/deploy",
+    "build:ui": "vite build",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "dotenv -e .dev.vars -- tsx scripts/migrate.ts",
+    "db:migrate:ci": "tsx scripts/migrate.ts"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.5",
+    "jose": "^6.2.12",
+    "postgres": "^3.4.9",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261010.1",
+    "@types/node": "^24.0.0",
+    "dotenv-cli": "^11.0.0",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.3",
+    "vitest": "^3.2.7",
+    "wrangler": "^4.147.0"
+  }
+}

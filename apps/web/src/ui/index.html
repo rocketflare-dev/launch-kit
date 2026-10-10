@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Launch Kit</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <strong>Launch Kit</strong>
+      <span id="user"></span>
+    </header>
+    <main>
+      <section id="signed-out" hidden>
+        <h1>Sign in</h1>
+        <p id="methods"></p>
+      </section>
+      <section id="signed-in" hidden>
+        <h1>Notes</h1>
+        <form id="note-form">
+          <input id="note-body" name="body" placeholder="Write a note" maxlength="2000" required />
+          <button type="submit">Add</button>
+        </form>
+        <ul id="notes"></ul>
+      </section>
+      <p id="error" role="alert"></p>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

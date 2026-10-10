@@ -1,0 +1,20 @@
+# Local development database (`pnpm bootstrap` / `pnpm dev:db:up`). Port: DEV_DB_PORT or 5520.
+name: launch-kit-dev
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    ports:
+      - "${DEV_DB_PORT:-5520}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  pgdata:

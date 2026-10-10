@@ -1,0 +1,55 @@
+name: Kit
+
+# The kit's OWN checks — true of the kit repository and of a company's fork of it, never of an app
+# made from it (launch.kit.json → scaffold.kitOnly deletes this file from every copy).
+#
+# - `Kit check`: the static conformance check (scripts/kit-check.mjs --exec), the same rules Launch
+#   applies before a kit can be picked.
+# - `Scaffold a copy`: what Launch's scaffold does to a kit, end to end — init → kitOnly deleted →
+#   postInit → the copy's own kit check and its gate (lint, typecheck, test). A kit whose fresh copy
+#   is not green is not a kit.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  kit-check:
+    name: Kit check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/kit-check.mjs --exec
+
+  scaffold:
+    name: Scaffold a copy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Copy the kit and run its init (as Launch's scaffold does)
+        run: |
+          git config --global user.email ci@example.com
+          git config --global user.name CI
+          COPY="$RUNNER_TEMP/copy"
+          git clone --quiet . "$COPY"
+          cd "$COPY"
+          node scripts/init.mjs acme-portal "Acme Portal" --domain acme.example --force --skip-install
+          pnpm install --no-frozen-lockfile
+          pnpm lint:fix
+          echo "COPY=$COPY" >> "$GITHUB_ENV"
+      - name: The copy conforms
+        run: node scripts/kit-check.mjs "$COPY" --exec
+      - name: The copy's gate (lint, typecheck, test)
+        working-directory: ${{ env.COPY }}
+        run: pnpm gate lint typecheck test

@@ -1,0 +1,15 @@
+# apps/web/.dev.vars — local values for `wrangler dev` and `pnpm db:migrate` (git-ignored).
+# `pnpm bootstrap` writes it; this file only documents the keys. Never commit real values.
+APP_ENV=development
+APP_URL=http://localhost:3000
+DEV_UI_PORT=3000
+DEV_API_PORT=3001
+DATABASE_URL=postgres://postgres:postgres@localhost:5520/app
+DATABASE_DRIVER=postgres
+SESSION_SECRET=
+AUTH_OIDC_ONLY=false
+# Optional: real sign-in through an OIDC issuer (redirect URI: <APP_URL>/auth/callback)
+OIDC_ISSUER=
+OIDC_CLIENT_ID=
+OIDC_CLIENT_SECRET=
+BOOTSTRAP_ADMIN_EMAILS=

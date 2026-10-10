@@ -1,0 +1,3 @@
+title = "launch-kit"
+[extend]
+useDefault = true

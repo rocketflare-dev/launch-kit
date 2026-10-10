@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.wrangler/
+.dev.vars
+.env.local
+*.log
+.DS_Store
+apps/web/wrangler.session.toml

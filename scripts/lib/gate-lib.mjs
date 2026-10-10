@@ -1,0 +1,89 @@
+/**
+ * `pnpm gate` — an app's checks, defined once. The same command is the pre-commit gate on a laptop,
+ * the `Gate` job in CI (`.github/workflows/ci.yml`), and Launch's ship gate, which reads
+ * `pnpm gate --list --json` (gate list schema 1: `{ schema: 1, steps: [{ id, command, database }] }`,
+ * `launch.kit.json` → `ci.gateList`) and then runs `pnpm gate <id>` step by step. `scripts/gate.mjs`
+ * executes; this file holds the steps and the argument rules (`scripts/tests/gate.test.mjs`).
+ *
+ * Add a step by appending to GATE_STEPS: Launch runs every step it knows (lint, typecheck, test)
+ * and refuses a list naming a step it neither runs nor skips, so a new id is a contract change —
+ * talk to whoever runs your Launch first.
+ */
+
+export const GATE_LIST_SCHEMA_VERSION = 1
+
+/** In run order. `command` is argv; `database` means the step needs a test database. */
+export const GATE_STEPS = Object.freeze([
+  {
+    id: 'lint',
+    command: ['pnpm', 'lint'],
+    display: 'biome check . --diagnostic-level=error',
+    database: false,
+  },
+  {
+    id: 'typecheck',
+    command: ['pnpm', 'typecheck'],
+    display: 'pnpm -r typecheck',
+    database: false,
+  },
+  // scripts/test.mjs: the scripts' own tests, then the app's against a test database — local
+  // Postgres, or the Neon gate branch Launch names in TEST_DATABASE_BRANCH.
+  { id: 'test', command: ['pnpm', 'test'], display: 'pnpm test', database: true },
+  // vite build + a dry-run `wrangler deploy` (what catches a Node-only import in the Worker).
+  { id: 'build', command: ['pnpm', 'build'], display: 'pnpm -r build', database: false },
+])
+
+export const GATE_USAGE = `usage: pnpm gate [step…] [--skip <step>]… [--keep-going] | --list [--json]
+
+  pnpm gate                 every step, in order, stopping at the first failure
+  pnpm gate test build      just those steps (still in gate order)
+  pnpm gate --skip test     every step but that one (for iterating locally — CI never skips)
+  pnpm gate --keep-going    run every step and report every failure
+  pnpm gate --list [--json] the steps; --json is the contract Launch reads
+
+steps: ${GATE_STEPS.map(s => s.id).join(', ')}`
+
+/** The `--list --json` document. */
+export function gateList() {
+  return {
+    schema: GATE_LIST_SCHEMA_VERSION,
+    steps: GATE_STEPS.map(({ id, display, database }) => ({ id, command: display, database })),
+  }
+}
+
+/**
+ * @param {string[]} argv
+ * @returns {{ list: boolean, json: boolean, keepGoing: boolean, steps: string[] } | { error: string } | { help: true }}
+ */
+export function parseGateArgs(argv) {
+  const ids = GATE_STEPS.map(s => s.id)
+  const named = []
+  const skipped = []
+  let list = false
+  let json = false
+  let keepGoing = false
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]
+    if (arg === '--help' || arg === '-h') return { help: true }
+    if (arg === '--list') list = true
+    else if (arg === '--json') json = true
+    else if (arg === '--keep-going') keepGoing = true
+    else if (arg === '--skip' || arg.startsWith('--skip=')) {
+      const value = arg === '--skip' ? argv[++i] : arg.slice('--skip='.length)
+      if (!value || !ids.includes(value)) {
+        return { error: `--skip needs a step (${ids.join(', ')}), got '${value ?? ''}'` }
+      }
+      skipped.push(value)
+    } else if (arg.startsWith('-')) return { error: `unknown option '${arg}'` }
+    else if (ids.includes(arg)) named.push(arg)
+    else return { error: `unknown step '${arg}' (steps: ${ids.join(', ')})` }
+  }
+  if (json && !list) return { error: '--json only applies to --list' }
+  if (list && (named.length || skipped.length || keepGoing)) {
+    return { error: '--list takes no steps, --skip or --keep-going' }
+  }
+  const wanted = named.length ? named : ids
+  const steps = ids.filter(id => wanted.includes(id) && !skipped.includes(id))
+  if (!list && steps.length === 0) return { error: 'nothing left to run' }
+  return { list, json, keepGoing, steps }
+}
