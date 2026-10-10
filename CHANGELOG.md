@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.1.2
+
+- `scripts/lib/kit-manifest.mjs` matches Launch's schema on two additions:
+  `launchProvides.generated[].kind` accepts `base64-32` (32 random bytes as standard base64, 44
+  characters) as well as `hex64`, and `declaredConfig.plain` lists the names in `optional` that are
+  not secrets (UPPER_SNAKE env names, default `[]`; absent, every optional name is a secret).
+
 ## 0.1.1
 
 - `scripts/kit-check.mjs`: an app manifest with `"app": null` is the kit itself, not a copy, so

@@ -31,7 +31,7 @@ describe('launch.kit.json (the shape Launch parses)', () => {
       pattern: '{slug}-{suffix}',
       stagingSuffix: '-staging',
     })
-    assert.deepEqual(manifest.declaredConfig, { optional: [] })
+    assert.deepEqual(manifest.declaredConfig, { optional: [], plain: [] })
   })
 
   it('accepts the optional kit.repo, worker.titles and launchProvides.oidc.label', () => {
@@ -42,6 +42,19 @@ describe('launch.kit.json (the shape Launch parses)', () => {
     const { problems, manifest } = validateManifest(m)
     assert.deepEqual(problems, [])
     assert.deepEqual(manifest.worker.titles, { RATE_LIMIT_KV: 'rate-limit' })
+  })
+
+  it('accepts a base64-32 generated secret and declaredConfig.plain', () => {
+    const m = own()
+    m.launchProvides.generated = [{ name: 'OAUTH_ENCRYPTION_KEY', kind: 'base64-32' }]
+    m.declaredConfig = {
+      optional: ['LANGFUSE_PUBLIC_KEY', 'LANGFUSE_SECRET_KEY'],
+      plain: ['LANGFUSE_PUBLIC_KEY'],
+    }
+    const { problems, manifest } = validateManifest(m)
+    assert.deepEqual(problems, [])
+    assert.equal(manifest.launchProvides.generated[0].kind, 'base64-32')
+    assert.deepEqual(manifest.declaredConfig.plain, ['LANGFUSE_PUBLIC_KEY'])
   })
 
   it('tolerates unknown fields', () => {
@@ -121,6 +134,20 @@ describe('launch.kit.json (the shape Launch parses)', () => {
         m.launchProvides.generated = [{ name: 'X', kind: 'uuid' }]
       },
       'launchProvides.generated',
+    ],
+    [
+      'a plain name that is not an env name',
+      m => {
+        m.declaredConfig.plain = ['langfuse_public_key']
+      },
+      'declaredConfig.plain',
+    ],
+    [
+      'plain as a string',
+      m => {
+        m.declaredConfig.plain = 'LANGFUSE_PUBLIC_KEY'
+      },
+      'declaredConfig.plain',
     ],
     [
       'roles as an array',
