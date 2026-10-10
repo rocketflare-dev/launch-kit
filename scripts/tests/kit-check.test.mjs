@@ -96,7 +96,10 @@ describe('kit-check finds what breaks the contract', () => {
       JSON.stringify({ app: null, kit: { id: m.kit.id, version: '0.0.0', commit: null } })
     )
     const report = checkKit(dir)
-    assert.deepEqual(failing(report), [])
+    // Only the app manifest is judged here: in a copy (kit.yml runs these tests there too) the
+    // tomls carry the copy's names, which the kit's slug then rightly refuses.
+    const files = report.checks.find(c => c.id === 'files')
+    assert.deepEqual(files.problems, [])
     assert.equal(report.kit.isCopy, false)
     assert.equal(report.kit.slug, m.scaffold.tokens.slug)
   })
