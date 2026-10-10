@@ -505,7 +505,7 @@ export function checkKit(dir, { provisioned = false, exec = false } = {}) {
           problems.push(`gate list: no ${id} step (Launch runs lint, typecheck, test)`)
     } catch {
       problems.push(
-        `gate list: \`${manifest.ci.gateList}\` did not print JSON (exit ${res.status})`
+        `gate list: \`${manifest.ci.gateList}\` did not print JSON (${res.error ? res.error.message : `exit ${res.status}`})`
       )
     }
     add('gate-list', problems)
