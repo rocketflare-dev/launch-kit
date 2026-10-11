@@ -50,7 +50,9 @@
       "issuer": "OIDC_ISSUER",
       "clientId": "OIDC_CLIENT_ID",
       "clientSecret": "OIDC_CLIENT_SECRET",
-      "only": "AUTH_OIDC_ONLY"
+      "only": "AUTH_OIDC_ONLY",
+      "callbackPath": "/auth/callback",
+      "signedOutPath": "/"
     },
     "bootstrapAdmins": "BOOTSTRAP_ADMIN_EMAILS",
     "generated": [

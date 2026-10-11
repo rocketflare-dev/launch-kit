@@ -58,6 +58,10 @@ Launch drives every app through these. Change them only together with `launch.ki
   from **this file in this repository**, so do not move the steps into a reusable workflow.
 - `scripts/deployer.mjs`, `scripts/bundle.mjs` and `docs/DEPLOYER.md` (protocol v1).
 - `GET /api/health` and `GET /api/ready` (`health` in the manifest).
+- The sign-in paths, `apps/web/src/auth/paths.ts`: `/auth/callback` (where sign-in returns,
+  `launchProvides.oidc.callbackPath`) and `/` (where a sign-out lands, `signedOutPath`). Launch
+  registers `<app url><path>` with the app's OIDC client, so a path changed in one place and not
+  the other breaks sign-in.
 - The variable names Launch sets (`launchProvides`): `APP_URL`, `DATABASE_URL`, `DATABASE_DRIVER`,
   `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `AUTH_OIDC_ONLY`,
   `BOOTSTRAP_ADMIN_EMAILS` and `SESSION_SECRET`. If you rename one, rename it in the manifest too.

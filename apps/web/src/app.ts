@@ -6,6 +6,7 @@
  *   GET /api/health   liveness: 200 with the release version, no database (`health.live`)
  *   GET /api/ready    readiness: 200 only when `SELECT 1` answers (`health.ready`)
  *   GET /auth/login   OIDC sign-in (`launchProvides.oidc`); `AUTH_OIDC_ONLY=true` makes it the only way
+ *   GET /auth/callback  where sign-in returns (`launchProvides.oidc.callbackPath`, `auth/paths.ts`)
  *
  * `createApp(deps)` takes the database opener so tests can hand it a fake.
  */
@@ -15,6 +16,7 @@ import { csrf } from 'hono/csrf'
 import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
 import { authorizationUrl, completeSignIn, randomToken } from './auth/oidc'
+import { OIDC_CALLBACK_PATH } from './auth/paths'
 import {
   endSession,
   readSession,
@@ -123,7 +125,7 @@ export function createApp(
     await next()
   })
 
-  const redirectUri = (cfg: AppConfig) => new URL('/auth/callback', cfg.APP_URL).toString()
+  const redirectUri = (cfg: AppConfig) => new URL(OIDC_CALLBACK_PATH, cfg.APP_URL).toString()
   const oidcSettings = (cfg: AppConfig) => ({
     issuer: cfg.OIDC_ISSUER ?? '',
     clientId: cfg.OIDC_CLIENT_ID ?? '',
@@ -142,7 +144,7 @@ export function createApp(
     return c.redirect(url.toString())
   })
 
-  app.get('/auth/callback', async c => {
+  app.get(OIDC_CALLBACK_PATH, async c => {
     const cfg = c.get('config')
     if (!oidcConfigured(cfg)) return fail(c, 404, 'OIDC is not configured')
     const flow = await takeFlow(c, cfg)

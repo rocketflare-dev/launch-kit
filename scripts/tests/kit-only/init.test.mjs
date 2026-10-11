@@ -103,3 +103,40 @@ describe('init', () => {
     }
   })
 })
+
+describe('init: an app whose display name is its slug (wtf / wtf)', () => {
+  const dir = copyRepo({ git: true })
+  dirs.push(dir)
+  const appManifest = JSON.parse(read(dir, 'launch.kit.json')).scaffold.appManifest
+
+  it('inits, renames again from its own names, and still conforms', () => {
+    const first = runNode(
+      'scripts/init.mjs',
+      ['wtf', 'wtf', '--domain', 'wtf.example', '--skip-install', '--force'],
+      { cwd: dir }
+    )
+    assert.equal(first.status, 0, first.stderr)
+    assert.match(read(dir, 'apps/web/wrangler.staging.toml'), /^name = "wtf-staging"$/m)
+    assert.equal(checkKit(dir).ok, true)
+    commitAll(dir, 'init wtf')
+
+    const again = runNode(
+      'scripts/init.mjs',
+      ['zz-init-probe', 'Zz Init Probe', '--domain', 'zz-probe.example', '--skip-install'],
+      { cwd: dir }
+    )
+    assert.equal(again.status, 0, again.stderr)
+    const prod = read(dir, 'apps/web/wrangler.toml')
+    assert.match(prod, /^name = "zz-init-probe"$/m)
+    assert.match(read(dir, 'apps/web/wrangler.staging.toml'), /^name = "zz-init-probe-staging"$/m)
+    assert.match(prod, /APP_URL = "https:\/\/app\.zz-probe\.example"/)
+    assert.equal(JSON.parse(read(dir, 'apps/web/package.json')).name, '@zz-init-probe/web')
+    assert.deepEqual(JSON.parse(read(dir, appManifest)).app, {
+      slug: 'zz-init-probe',
+      display: 'Zz Init Probe',
+      domain: 'zz-probe.example',
+    })
+    const report = checkKit(dir)
+    assert.equal(report.ok, true, JSON.stringify(report.checks.filter(c => !c.ok)))
+  })
+})

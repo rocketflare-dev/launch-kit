@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## 0.1.4
+
+- `launch.kit.json` declares the kit's sign-in paths, which Launch's kit contract now reads:
+  `launchProvides.oidc.callbackPath: "/auth/callback"` and `signedOutPath: "/"` (the kit does no
+  RP-initiated logout; a sign-out ends the app's session and the UI goes to `/`). Launch registers
+  `{url}{path}` with the app's OIDC client. Without them it registered Rocketflare's
+  `/auth/oidc/callback`, and every sign-in failed ("The address this app asked Launch to return to
+  is not one it registered"). An app already made from the kit also needs its client's redirect
+  URIs fixed once in Launch: `docs/upgrades/0.1.4.md`.
+- The two paths are one constant each, in `apps/web/src/auth/paths.ts`. The callback route, the
+  `redirect_uri` the app sends and the UI's sign-out read them, and `apps/web/tests/oidc.test.ts`
+  pins them.
+- `scripts/lib/kit-manifest.mjs` validates `callbackPath` and `signedOutPath` as Launch does. Each
+  must be a path on the app's own origin: a single leading `/`, and no scheme, host, whitespace or
+  `#`. Absent, they default to Rocketflare's (`/auth/oidc/callback`, `/login?signedOut=1`).
+- `init` renames an app whose display name equals its slug (`wtf` / `wtf`).
+  `scripts/lib/tokens.mjs` replaced the display name before the slug, so the second rename turned
+  `wtf-staging` into `Beta Desk-staging`. It now renames in one pass, taking the longest token first
+  at each position, and the slug's rule wins when the two are the same string.
+- The kit fixture writes Launch's `workers_dev` comment the way `write_config` does.
+
 ## 0.1.3
 
 - `scripts/kit-check.mjs` accepts a provisioned copy. Launch's `write_config` commits an app's

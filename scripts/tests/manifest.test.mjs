@@ -57,6 +57,53 @@ describe('launch.kit.json (the shape Launch parses)', () => {
     assert.deepEqual(manifest.declaredConfig.plain, ['LANGFUSE_PUBLIC_KEY'])
   })
 
+  it("defaults launchProvides.oidc's callbackPath and signedOutPath to Rocketflare's", () => {
+    const { problems, manifest } = validateManifest(own())
+    assert.deepEqual(problems, [])
+    assert.equal(manifest.launchProvides.oidc.callbackPath, '/auth/oidc/callback')
+    assert.equal(manifest.launchProvides.oidc.signedOutPath, '/login?signedOut=1')
+  })
+
+  it('accepts a callbackPath and a signedOutPath on the app', () => {
+    for (const [callbackPath, signedOutPath] of [
+      ['/auth/callback', '/'],
+      ['/auth/oidc/callback', '/login?signedOut=1'],
+      ['/sso/return/', '/bye?from=sso&x=1'],
+    ]) {
+      const m = own()
+      Object.assign(m.launchProvides.oidc, { callbackPath, signedOutPath })
+      const { problems, manifest } = validateManifest(m)
+      assert.deepEqual(problems, [], callbackPath)
+      assert.equal(manifest.launchProvides.oidc.callbackPath, callbackPath)
+      assert.equal(manifest.launchProvides.oidc.signedOutPath, signedOutPath)
+    }
+  })
+
+  for (const bad of [
+    '',
+    'auth/callback',
+    '//evil.example/auth/callback',
+    'https://app.example.com/auth/callback',
+    '/auth/call back',
+    '/auth/callback\n',
+    '/auth/callback#x',
+    `/${'a'.repeat(300)}`,
+    42,
+  ]) {
+    it(`refuses the OIDC path ${JSON.stringify(bad).slice(0, 40)}`, () => {
+      for (const key of ['callbackPath', 'signedOutPath']) {
+        const m = own()
+        m.launchProvides.oidc[key] = bad
+        const { problems, manifest } = validateManifest(m)
+        assert.equal(manifest, null, key)
+        assert.ok(
+          problems.some(p => p.startsWith(`launchProvides.oidc.${key}:`)),
+          problems.join('\n')
+        )
+      }
+    })
+  }
+
   it('tolerates unknown fields', () => {
     const m = own()
     m.future = { anything: true }

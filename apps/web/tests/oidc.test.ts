@@ -7,6 +7,7 @@ import { exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp } from '../src/app'
 import { pkceChallenge, resetOidcCaches } from '../src/auth/oidc'
+import { OIDC_CALLBACK_PATH, OIDC_SIGNED_OUT_PATH } from '../src/auth/paths'
 import { cookiesOf, testEnv } from './helpers'
 
 const ISSUER = 'https://issuer.example.test'
@@ -183,6 +184,36 @@ describe('OIDC sign-in', () => {
     expect((await app.request('/api/me', {}, env())).status).toBe(401)
     const forged = `__Host-session=${btoa(JSON.stringify({ id: 'x', exp: 9e9 }))}.bad`
     expect((await app.request('/api/me', { headers: { cookie: forged } }, env())).status).toBe(401)
+  })
+})
+
+/**
+ * launch.kit.json → `launchProvides.oidc` declares `callbackPath: "/auth/callback"` and
+ * `signedOutPath: "/"`, and Launch registers `{url}{path}` with the app's OIDC client. These pin the
+ * app's side through its exported constants (src/auth/paths.ts), never by reading the manifest.
+ */
+describe('relying-party paths (launchProvides.oidc)', () => {
+  beforeEach(() => resetOidcCaches())
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('are the paths the manifest declares, and paths on the app as the contract requires', () => {
+    expect(OIDC_CALLBACK_PATH).toBe('/auth/callback')
+    expect(OIDC_SIGNED_OUT_PATH).toBe('/')
+    for (const p of [OIDC_CALLBACK_PATH, OIDC_SIGNED_OUT_PATH])
+      expect(p).toMatch(/^\/(?!\/)[^\s#]*$/)
+  })
+
+  it('the callback path is the redirect_uri the app sends and a route it serves', async () => {
+    stubIssuer({ claims: {} })
+    const app = createApp({ openDatabase: vi.fn() })
+    const res = await app.request('/auth/login', {}, env())
+    const location = new URL(res.headers.get('location') ?? '')
+    expect(location.searchParams.get('redirect_uri')).toBe(
+      new URL(OIDC_CALLBACK_PATH, 'https://app.example.test').toString()
+    )
+    const cb = await app.request(`${OIDC_CALLBACK_PATH}?code=abc&state=x`, {}, env())
+    expect(cb.status).toBe(400)
+    expect(await cb.json()).toMatchObject({ error: expect.stringMatching(/Sign-in expired/) })
   })
 })
 

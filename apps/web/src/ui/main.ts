@@ -1,4 +1,5 @@
 /** The placeholder UI: who is signed in, and the example notes. Replace it with your own. */
+import { OIDC_SIGNED_OUT_PATH } from '../auth/paths'
 
 interface Me {
   id: string
@@ -82,7 +83,8 @@ async function renderSignedIn(me: Me) {
   const out = Object.assign(document.createElement('button'), {
     className: 'link',
     textContent: 'Sign out',
-    onclick: () => api('/auth/logout', { method: 'POST' }).then(() => location.assign('/')),
+    onclick: () =>
+      api('/auth/logout', { method: 'POST' }).then(() => location.assign(OIDC_SIGNED_OUT_PATH)),
   })
   user.append(out)
   $<HTMLFormElement>('note-form').onsubmit = event => {
