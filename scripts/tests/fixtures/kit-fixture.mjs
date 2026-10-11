@@ -326,9 +326,14 @@ export function provisionLikeLaunch(
       )
       text = lines.join('\n')
     }
+    const note =
+      '# Launch routes this app to its own host (spec/04), so there is no workers.dev host.'
     if (/^workers_dev\s*=/m.test(text))
-      text = text.replace(/^workers_dev\s*=.*$/m, 'workers_dev = false')
-    else text = text.replace(/^(name = "[^"]*"\n)/m, '$1\nworkers_dev = false\n')
+      text = text.replace(
+        /^(?:# Fallback host[^\n]*\n)?workers_dev\s*=.*$/m,
+        `${note}\nworkers_dev = false`
+      )
+    else text = text.replace(/^(name = "[^"]*"\n)/m, `$1\n${note}\nworkers_dev = false\n`)
     writeFileSync(path.join(dir, rel), text)
   }
   return ids
