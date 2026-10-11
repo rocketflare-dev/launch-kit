@@ -1,10 +1,8 @@
+/** toml-lite and yaml-lite on inline documents (this repository's own files: kit-only/repository.test.mjs). */
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import { describe, it } from 'node:test'
 import { parseToml, TomlError } from '../lib/toml-lite.mjs'
 import { parseYaml } from '../lib/yaml-lite.mjs'
-import { ROOT } from './helpers.mjs'
 
 describe('toml-lite', () => {
   it('reads tables, arrays of tables, strings, arrays and inline tables', () => {
@@ -46,13 +44,6 @@ queue = "app-jobs"
     assert.throws(() => parseToml('a = 1\na = 2'), TomlError)
     assert.throws(() => parseToml('a = "open'), TomlError)
   })
-
-  it('parses both of the app tomls', () => {
-    for (const f of ['wrangler.toml', 'wrangler.staging.toml']) {
-      const doc = parseToml(readFileSync(path.join(ROOT, 'apps/web', f), 'utf8'))
-      assert.equal(doc.main, 'src/worker.ts')
-    }
-  })
 })
 
 describe('yaml-lite', () => {
@@ -85,12 +76,5 @@ jobs:
     assert.equal(doc.jobs.gate.if, 'a &&\nb\n')
     assert.equal(doc.jobs.gate.steps[0].with['fetch-depth'], '0')
     assert.equal(doc.jobs.gate.steps[1].run, 'echo "a: b"')
-  })
-
-  it('parses every workflow in this repository', () => {
-    for (const f of ['ci.yml', 'deploy.yml']) {
-      const doc = parseYaml(readFileSync(path.join(ROOT, '.github/workflows', f), 'utf8'))
-      assert.ok(doc.jobs && Object.keys(doc.jobs).length > 0, f)
-    }
   })
 })

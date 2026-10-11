@@ -20,7 +20,9 @@ still compiles.
   a dev sign-in also exists. `AUTH_OIDC_ONLY=true` turns the dev sign-in off.
 - `scripts/` holds the Node scripts, which use built-ins only: `init`, `bootstrap`, `dev`, `gate`,
   `test`, `kit-check`, `upgrade`, `deployer` and `bundle`. Their tests are in `scripts/tests/`, and
-  they run with `node --test`.
+  they run with `node --test`. A test never judges this repository's own files (its names, tomls,
+  version or manifest): an app made from the kit changes all of them. Build a fixture in a temp
+  dir (`scripts/tests/fixtures/`), or put a kit-only check in `scripts/tests/kit-only/`.
 
 ## Commands
 
@@ -48,8 +50,9 @@ node scripts/kit-check.mjs  # does the repo still conform to the contract?
 5. **Bindings: only the kinds Launch can provision.** These are KV, Queues, R2, Durable Objects,
    Workflows, Workers AI and assets. D1, Hyperdrive, Vectorize, service bindings and routes are
    refused. To add a binding, add it to **both** `wrangler.toml` and `wrangler.staging.toml` in the
-   same shape. Name account-scoped resources `<slug>-<suffix>` (`-staging` in staging) and keep
-   ids as `<PLACEHOLDER>`s, because Launch fills them in. Then run `node scripts/kit-check.mjs`.
+   same shape. Name account-scoped resources `<slug>-<suffix>` (`-staging` in staging) and give a
+   new binding's id a `<PLACEHOLDER>`, because Launch fills it in (and commits the real ids into
+   an app's tomls, so the ids already there may be real). Then run `node scripts/kit-check.mjs`.
 6. **The Worker runs on workerd, not Node.** Do not use `process.env`, `node:fs` or TCP drivers in
    `apps/web/src/`. `pnpm gate build` (a dry-run `wrangler deploy`) catches most of these mistakes.
 7. **Writes need a signed-in user, from the app's own origin.** Use `requireUser` and keep

@@ -1,18 +1,18 @@
 /**
- * launch.kit.json's shape. The Rocketflare kit ports these cases to vitest
+ * launch.kit.json's shape, judged on the fixture kit's manifest (./fixtures/kit-fixture.mjs), never
+ * this repository's: an app may change its own. That the kit's own manifest is valid is
+ * kit-only/repository.test.mjs and kit.yml's `Kit check`. The Rocketflare kit ports these cases to vitest
  * (rocketflare-dev/rocketflare `apps/web/tests/config/launch-kit-manifest.test.ts`): keep both in step.
  */
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import { describe, it } from 'node:test'
 import { fillTemplate, validateManifest } from '../lib/kit-manifest.mjs'
-import { ROOT } from './helpers.mjs'
+import { fixtureManifest } from './fixtures/kit-fixture.mjs'
 
-const own = () => JSON.parse(readFileSync(path.join(ROOT, 'launch.kit.json'), 'utf8'))
+const own = () => fixtureManifest()
 
 describe('launch.kit.json (the shape Launch parses)', () => {
-  it("this repository's manifest is valid", () => {
+  it("the fixture kit's manifest is valid", () => {
     const { problems, manifest } = validateManifest(own())
     assert.deepEqual(problems, [])
     assert.equal(manifest.schema, 1)

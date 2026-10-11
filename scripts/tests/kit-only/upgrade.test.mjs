@@ -1,13 +1,16 @@
 /**
  * scripts/upgrade.mjs end to end: a throwaway kit repository with two tags, an app made from the
  * first by init, then the upgrade to the second — a clean merge, then a conflict.
+ *
+ * Kit-only (scaffold.kitOnly): the throwaway kit is a copy of THIS repository, which is the kit only
+ * in the kit itself — in an app it carries the app's names and whatever files the app kept.
  */
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { after, describe, it } from 'node:test'
-import { commitAll, copyRepo, runNode, tempDir } from './helpers.mjs'
+import { commitAll, copyRepo, runNode, tempDir } from '../helpers.mjs'
 
 const dirs = []
 after(() => {

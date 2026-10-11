@@ -5,9 +5,11 @@ name: Kit
 #
 # - `Kit check`: the static conformance check (scripts/kit-check.mjs --exec), the same rules Launch
 #   applies before a kit can be picked.
-# - `Scaffold a copy`: what Launch's scaffold does to a kit, end to end — init → kitOnly deleted →
-#   postInit → the copy's own kit check and its gate (lint, typecheck, test). A kit whose fresh copy
-#   is not green is not a kit.
+# - `Scaffold a copy`: what Launch does to a kit, end to end — init → kitOnly deleted → postInit →
+#   the copy's own kit check; then Launch's write_config (real KV ids, its vars, workers_dev =
+#   false, committed into the copy's tomls) → the provisioned copy's kit check (--provisioned) and
+#   its gate (lint, typecheck, test). A kit whose copy is not green once provisioned is not a kit:
+#   that is the state every app Launch deploys is in (0.1.3).
 on:
   pull_request:
   push:
@@ -51,6 +53,14 @@ jobs:
           echo "COPY=$COPY" >> "$GITHUB_ENV"
       - name: The copy conforms
         run: node scripts/kit-check.mjs "$COPY" --exec
-      - name: The copy's gate (lint, typecheck, test)
+      - name: Provision the copy as Launch's write_config does
+        run: |
+          node --input-type=module -e \
+            "const m = await import('./scripts/tests/fixtures/kit-fixture.mjs'); m.provisionLikeLaunch(process.argv[1])" \
+            "$COPY"
+          git -C "$COPY" diff --stat
+      - name: The provisioned copy conforms
+        run: node scripts/kit-check.mjs "$COPY" --provisioned
+      - name: The provisioned copy's gate (lint, typecheck, test)
         working-directory: ${{ env.COPY }}
         run: pnpm gate lint typecheck test
