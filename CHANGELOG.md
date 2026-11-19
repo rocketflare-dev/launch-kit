@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The kit check accepts a `[version_metadata]` binding (the Worker's own version id), as Launch's
+  deploy gateway now does. It reaches no resource, so it needs nothing provisioned. Rocketflare
+  binds it from 0.39.
+
 ## 0.1.4
 
 - `launch.kit.json` declares the kit's sign-in paths, which Launch's kit contract now reads:
