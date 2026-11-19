@@ -185,6 +185,14 @@ describe('kit-check finds what breaks the contract', () => {
     assert.match(failing(checkKit(dir)).join('\n'), /id-token: write/)
   })
 
+  it('not a [version_metadata] binding: it reaches no resource, and Launch lets it through', () => {
+    const dir = fixture()
+    for (const f of FIXTURE_TOMLS) {
+      edit(dir, f, t => `${t}\n[version_metadata]\nbinding = "CF_VERSION_METADATA"\n`)
+    }
+    assert.deepEqual(failing(checkKit(dir)), [])
+  })
+
   it('a hyperdrive binding, a route and a misnamed queue', () => {
     const dir = fixture()
     for (const f of FIXTURE_TOMLS) {
